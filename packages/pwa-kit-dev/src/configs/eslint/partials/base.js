@@ -20,6 +20,9 @@ module.exports = {
         node: true,
         browser: true
     },
+    globals: {
+        __webpack_public_path__: 'writable'
+    },
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/recommended',
