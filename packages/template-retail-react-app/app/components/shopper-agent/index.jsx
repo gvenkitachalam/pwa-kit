@@ -6,14 +6,36 @@
  */
 
 import React, {useEffect} from 'react'
-import useScript from '@salesforce/retail-react-app/app/hooks/use-script'
+import {Helmet} from 'react-helmet'
 import {useUsid} from '@salesforce/commerce-sdk-react'
 import PropTypes from 'prop-types'
 import {useTheme} from '@salesforce/retail-react-app/app/components/shared/ui'
+import {
+    validateCommerceAgentSettings,
+    isEnabled
+} from '@salesforce/retail-react-app/app/utils/shopper-agent-validation'
 
 const onClient = typeof window !== 'undefined'
 
-// Function to initialize embedded messaging
+/**
+ * Initializes the embedded messaging service with the provided configuration.
+ * This function sets up the embedded messaging bootstrap with the specified
+ * parameters and handles any initialization errors gracefully.
+ *
+ * @param {string} salesforceOrgId - The Salesforce organization ID
+ * @param {string} embeddedServiceDeploymentName - The name of the embedded service deployment
+ * @param {string} embeddedServiceDeploymentUrl - The URL of the embedded service deployment
+ * @param {string} scrt2Url - The URL for the SCRT2 script
+ * @param {string} locale - The locale for the embedded messaging service
+ * @example
+ * initEmbeddedMessaging(
+ *   '00D1234567890ABC',
+ *   'MIAW_Guided_Shopper_production',
+ *   'https://myorg.salesforce.com/ESWMIAWGuidedShopper',
+ *   'https://myorg.salesforce-scrt.com',
+ *   'en-US'
+ * )
+ */
 const initEmbeddedMessaging = (
     salesforceOrgId,
     embeddedServiceDeploymentName,
@@ -43,8 +65,26 @@ const initEmbeddedMessaging = (
     }
 }
 
+/**
+ * Custom hook to manage the embedded messaging service initialization.
+ * This hook monitors when the embedded messaging script is available and
+ * initializes the service with the provided configuration.
+ *
+ * @param {string} salesforceOrgId - The Salesforce organization ID
+ * @param {string} embeddedServiceDeploymentName - The name of the embedded service deployment
+ * @param {string} embeddedServiceDeploymentUrl - The URL of the embedded service deployment
+ * @param {string} scrt2Url - The URL for the SCRT2 script
+ * @param {string} locale - The locale for the embedded messaging service
+ * @example
+ * useMiaw(
+ *   '00D1234567890ABC',
+ *   'MIAW_Guided_Shopper_production',
+ *   'https://myorg.salesforce.com/ESWMIAWGuidedShopper',
+ *   'https://myorg.salesforce-scrt.com',
+ *   'en-US'
+ * )
+ */
 function useMiaw(
-    scriptLoadStatus,
     salesforceOrgId,
     embeddedServiceDeploymentName,
     embeddedServiceDeploymentUrl,
@@ -52,7 +92,8 @@ function useMiaw(
     locale
 ) {
     useEffect(() => {
-        if (scriptLoadStatus.loaded && !scriptLoadStatus.error) {
+        // Check if the embedded messaging script has been loaded and is available
+        if (onClient && window.embeddedservice_bootstrap) {
             initEmbeddedMessaging(
                 salesforceOrgId,
                 embeddedServiceDeploymentName,
@@ -62,7 +103,6 @@ function useMiaw(
             )
         }
     }, [
-        scriptLoadStatus,
         salesforceOrgId,
         embeddedServiceDeploymentName,
         embeddedServiceDeploymentUrl,
@@ -71,31 +111,27 @@ function useMiaw(
     ])
 }
 
-function validateCommerceAgentSettings(commerceAgent) {
-    const requiredFields = [
-        'enabled',
-        'askAgentOnSearch',
-        'embeddedServiceName',
-        'embeddedServiceEndpoint',
-        'scriptSourceUrl',
-        'scrt2Url',
-        'salesforceOrgId',
-        'commerceOrgId',
-        'siteId'
-    ]
-
-    const isValid = requiredFields.every((key) => typeof commerceAgent[key] === 'string')
-    if (!isValid) {
-        console.error('Invalid commerce agent settings.')
-    }
-    return isValid
-}
-
-function isEnabled(enabled) {
-    return enabled === 'true' && onClient
-}
-
-function ShopperAgentWindow({commerceAgentConfiguration, locale, basketId}) {
+/**
+ * ShopperAgentWindow component that handles the embedded messaging service initialization
+ * and event management. This component is responsible for:
+ * - Loading the embedded messaging script via Helmet
+ * - Setting up event listeners for embedded messaging events
+ * - Managing pre-chat fields and basket context
+ * - Handling z-index management for the chat widget
+ *
+ * @param {Object} props - Component props
+ * @param {Object} props.commerceAgentConfiguration - Commerce agent configuration object
+ * @param {string} props.basketId - The basket ID for the embedded messaging script
+ * @param {string} props.locale - The locale for the embedded messaging script
+ * @returns {JSX.Element} Helmet component with embedded messaging script
+ * @example
+ * <ShopperAgentWindow
+ *   commerceAgentConfiguration={config}
+ *   basketId="4a67cda5b1b9325a29207854c1"
+ *   locale="en-US"
+ * />
+ */
+const ShopperAgentWindow = ({commerceAgentConfiguration, locale, basketId}) => {
     const theme = useTheme()
     const {
         embeddedServiceName,
@@ -109,15 +145,23 @@ function ShopperAgentWindow({commerceAgentConfiguration, locale, basketId}) {
 
     const {usid} = useUsid()
 
+    /**
+     * Sets up event listeners for embedded messaging events.
+     * This effect handles:
+     * - onEmbeddedMessagingReady: Sets initial pre-chat fields
+     * - onEmbeddedMessagingWindowMaximized: Manages z-index for chat widget
+     */
     useEffect(() => {
         const handleEmbeddedMessagingReady = () => {
-            window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
-                SiteId: siteId,
-                Locale: locale,
-                OrganizationId: commerceOrgId,
-                UsId: usid,
-                IsCartMgmtSupported: true
-            })
+            if (window.embeddedservice_bootstrap?.prechatAPI) {
+                window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
+                    SiteId: siteId,
+                    Locale: locale,
+                    OrganizationId: commerceOrgId,
+                    UsId: usid,
+                    IsCartMgmtSupported: true
+                })
+            }
         }
 
         const handleEmbeddedMessagingWindowMaximized = () => {
@@ -146,12 +190,18 @@ function ShopperAgentWindow({commerceAgentConfiguration, locale, basketId}) {
         }
     }, [commerceAgentConfiguration, usid, theme.zIndices.sticky])
 
-    // whenever the basketId changes, update the hidden prechat fields
+    /**
+     * Updates basket ID in pre-chat fields when basket changes.
+     * This effect listens for the embedded messaging button click event
+     * and updates the basket ID in the pre-chat fields.
+     */
     useEffect(() => {
         const handleEmbeddedMessagingButtonClicked = () => {
-            window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
-                BasketId: basketId
-            })
+            if (window.embeddedservice_bootstrap?.prechatAPI) {
+                window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
+                    BasketId: basketId
+                })
+            }
         }
 
         window.addEventListener(
@@ -168,20 +218,19 @@ function ShopperAgentWindow({commerceAgentConfiguration, locale, basketId}) {
         }
     }, [basketId])
 
-    // Load the embedded messaging script
-    const scriptLoadStatus = useScript(scriptSourceUrl)
-
     // Initialize the embedded messaging service
-    useMiaw(
-        scriptLoadStatus,
-        salesforceOrgId,
-        embeddedServiceName,
-        embeddedServiceEndpoint,
-        scrt2Url,
-        locale
-    )
+    useMiaw(salesforceOrgId, embeddedServiceName, embeddedServiceEndpoint, scrt2Url, locale)
 
-    return null
+    return (
+        <Helmet>
+            <script
+                id="embedded-messaging-script"
+                src={scriptSourceUrl}
+                async
+                type="text/javascript"
+            />
+        </Helmet>
+    )
 }
 
 ShopperAgentWindow.propTypes = {
@@ -191,12 +240,29 @@ ShopperAgentWindow.propTypes = {
 }
 
 /**
- * ShopperAgent component that initializes and manages the embedded messaging service
+ * ShopperAgent component that initializes and manages the embedded messaging service.
+ * This is the main component that:
+ * - Validates the commerce agent configuration
+ * - Checks if the feature is enabled
+ * - Ensures basket loading is complete
+ * - Renders the ShopperAgentWindow when all conditions are met
+ *
+ * The component follows a conditional rendering pattern where it only renders
+ * the embedded messaging functionality when all prerequisites are satisfied.
+ *
  * @param {Object} props - Component props
- * @param {Object} props.commerceAgentConfiguration - Commerce agent settings
+ * @param {Object} props.commerceAgentConfiguration - Commerce agent configuration object
  * @param {string} props.basketId - The basket ID for the embedded messaging script
  * @param {string} props.locale - The locale for the embedded messaging script
- * @returns {JSX.Element} The ShopperAgent component
+ * @param {boolean} props.basketDoneLoading - Whether the basket has finished loading
+ * @returns {JSX.Element|null} The ShopperAgent component or null if conditions not met
+ * @example
+ * <ShopperAgent
+ *   commerceAgentConfiguration={config}
+ *   basketId="4a67cda5b1b9325a29207854c1"
+ *   locale="en-US"
+ *   basketDoneLoading={true}
+ * />
  */
 function ShopperAgent({commerceAgentConfiguration, basketId, locale, basketDoneLoading}) {
     const {enabled} = commerceAgentConfiguration
