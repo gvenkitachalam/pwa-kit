@@ -420,9 +420,11 @@ const AccountOrderDetail = () => {
                 isOpen={isCancelModalOpen}
                 onClose={onCancelModalClose}
                 order={order}
-                onRequestCancellation={(order) => {
+                onCancel={(order, selectedReason) => {
                     // TODO: Add cancellation logic here
                     console.log('Requesting cancellation for order:', order?.orderNo)
+                    console.log('Requesting cancellation for email:', order?.customerInfo?.email)
+                    console.log('Cancellation reason:', selectedReason)
                 }}
             />
         </Stack>
