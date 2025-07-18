@@ -6,10 +6,20 @@
  */
 
 import React from 'react'
-import {Box, Heading, Grid, Container, Button, Text, Stack} from '@chakra-ui/react'
+import {
+    Box,
+    Heading,
+    Grid,
+    Container,
+    Button,
+    Text,
+    Stack
+} from '@salesforce/retail-react-app/app/components/shared/ui'
 import {BrandLogo} from '@salesforce/retail-react-app/app/components/icons'
 import useNavigation from '@salesforce/retail-react-app/app/hooks/use-navigation'
 import {useCurrentCustomer} from '@salesforce/retail-react-app/app/hooks/use-current-customer'
+import OrderLookup from '@salesforce/retail-react-app/app/components/order-lookup/index'
+import FormCard from '@salesforce/retail-react-app/app/components/form-card'
 
 const OrderStatusPage = () => {
     const navigate = useNavigation()
@@ -20,17 +30,21 @@ const OrderStatusPage = () => {
         navigate('/login')
     }
 
+    const handleOrderLookup = () => {
+        // TODO: API integration for order lookup
+    }
+
     // Check if user is not registered and customer data has loaded
     const shouldShowSignInForm = customerType !== null && !isRegistered
 
     return (
-        <Box data-testid="order-status-page" minH="100vh" bg="gray.50">
-            <Container py={{base: 8, md: 16}} pt={{base: 12, md: 24}}>
+        <Box data-testid="order-status-page" bg="gray.50">
+            <Container py={{base: 8, md: 8}} pt={{base: 12, md: 24}}>
                 <Heading as="h1" size="lg" textAlign="left">
                     Order Status
                 </Heading>
             </Container>
-            <Container maxW="1000px" px={4} mt={8}>
+            <Container maxW="container.lg" px={4} mt={8} pb={{base: 8, md: 16}}>
                 <Grid
                     templateColumns={{base: '1fr', md: '1fr 1fr'}}
                     gap={8}
@@ -39,15 +53,7 @@ const OrderStatusPage = () => {
                 >
                     {/* Sign In Card - Only show if user is not registered */}
                     {shouldShowSignInForm && (
-                        <Box
-                            bg="white"
-                            borderRadius="md"
-                            boxShadow="md"
-                            p={{base: 6, md: 8}}
-                            maxW="450px"
-                            width="100%"
-                            mx="auto"
-                        >
+                        <FormCard>
                             <Stack spacing={6} align="center">
                                 <BrandLogo width="60px" height="auto" />
                                 <Text fontSize="lg" fontWeight="medium" textAlign="center">
@@ -62,10 +68,11 @@ const OrderStatusPage = () => {
                                     Sign in
                                 </Button>
                             </Stack>
-                        </Box>
+                        </FormCard>
                     )}
 
                     {/* Order Lookup Card */}
+                    <OrderLookup onSubmit={handleOrderLookup} />
                 </Grid>
             </Container>
         </Box>
