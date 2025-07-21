@@ -315,7 +315,8 @@ const {handler} = runtime.createHandler(options, (app) => {
                         // Used by the service worker in /worker/main.js
                         'storage.googleapis.com',
                         '*.site.com',
-                        '*.commercecloud.com'
+                        '*.commercecloud.com',
+                        '*.test1.my.pc-rnd.site.com'
                     ],
                     'connect-src': [
                         // Connect to Einstein APIs
@@ -332,9 +333,18 @@ const {handler} = runtime.createHandler(options, (app) => {
                         // Allow frames from Salesforce site.com (Needed for MIAW)
                         '*.site.com',
                         'checkoutshopper-test.adyen.com',
-                        '*.pc-rnd.site.com'
+                        '*.pc-rnd.site.com',
+                        '*.test1.my.pc-rnd.salesforce-scrt.com',
+                        '*.test1.my.pc-rnd.site.com'
                     ],
-                    'frame-ancestors': ["'self'"]
+                    'frame-ancestors': [
+            		"'self'",
+         	        // MIAW
+                        "https://q3sdb307142025mp1.test1.my.pc-rnd.site.com",
+                       // PWA
+                       "https://q3sdb307142025mp1-production.mobify-storefront.com"
+
+		   ]
                 }
             }
         })
