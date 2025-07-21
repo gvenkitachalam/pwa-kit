@@ -94,7 +94,7 @@ const Home = () => {
 
             <Hero
                 title={intl.formatMessage({
-                    defaultMessage: 'The React PWA Starter Store for Retail',
+                    defaultMessage: 'Fashion House',
                     id: 'home.title.react_starter_store'
                 })}
                 img={{

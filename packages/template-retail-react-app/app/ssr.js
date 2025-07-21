@@ -52,7 +52,7 @@ const options = {
     // Set this to false if using a SLAS public client
     // When setting this to true, make sure to also set the PWA_KIT_SLAS_CLIENT_SECRET
     // environment variable as this endpoint will return HTTP 501 if it is not set
-    useSLASPrivateClient: false,
+    useSLASPrivateClient: true,
 
     // If you wish to use additional SLAS endpoints that require private clients,
     // customize this regex to include the additional endpoints the custom SLAS
@@ -307,11 +307,15 @@ const {handler} = runtime.createHandler(options, (app) => {
                     'img-src': [
                         // Default source for product images - replace with your CDN
                         '*.commercecloud.salesforce.com',
-                        'checkoutshopper-test.adyen.com'
+                        'checkoutshopper-test.adyen.com',
+                        '*.demandware.net',
+                        '*.sfcc-store-internal.net'
                     ],
                     'script-src': [
                         // Used by the service worker in /worker/main.js
-                        'storage.googleapis.com'
+                        'storage.googleapis.com',
+                        '*.site.com',
+                        '*.commercecloud.com'
                     ],
                     'connect-src': [
                         // Connect to Einstein APIs
@@ -321,12 +325,14 @@ const {handler} = runtime.createHandler(options, (app) => {
                         'https://api.lab.amplitude.com/sdk/vardata',
                         '*.adyen.com',
                         // Connect to SCRT2 URLs
-                        '*.salesforce-scrt.com'
+                        '*.salesforce-scrt.com',
+                        '*.pc-rnd.salesforce-scrt.com'
                     ],
                     'frame-src': [
                         // Allow frames from Salesforce site.com (Needed for MIAW)
                         '*.site.com',
-                        'checkoutshopper-test.adyen.com'
+                        'checkoutshopper-test.adyen.com',
+                        '*.pc-rnd.site.com'
                     ],
                     'frame-ancestors': ["'self'"]
                 }
